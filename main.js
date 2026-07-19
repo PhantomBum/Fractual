@@ -1,9 +1,13 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
+const packageMetadata = require('./package.json');
 
 let window;
 let updateStatus = { state: 'idle', message: 'Updates check automatically' };
+let discordClient = null;
+let presenceStatus = { state: 'idle', enabled: false, configured: false, message: 'Show Fractual in your Discord activity' };
+const discordClientId = process.env.FRACTUAL_DISCORD_CLIENT_ID || packageMetadata.discordClientId || '';
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -71,6 +75,31 @@ ipcMain.handle('update:check', async () => {
 });
 ipcMain.on('update:install', () => {
   if (updateStatus.state === 'downloaded') autoUpdater.quitAndInstall(false, true);
+});
+ipcMain.handle('presence:get-status', () => presenceStatus);
+ipcMain.handle('presence:set-enabled', async (_event, enabled) => {
+  if (!enabled) {
+    try { await discordClient?.clearActivity(); discordClient?.destroy(); } catch {}
+    discordClient = null;
+    presenceStatus = { state: 'idle', enabled: false, configured: Boolean(discordClientId), message: 'Show Fractual in your Discord activity' };
+    return presenceStatus;
+  }
+  if (!discordClientId) {
+    presenceStatus = { state: 'setup', enabled: false, configured: false, message: 'Add a Discord Application ID to activate presence' };
+    return presenceStatus;
+  }
+  try {
+    const DiscordRPC = require('discord-rpc');
+    discordClient?.destroy();
+    discordClient = new DiscordRPC.Client({ transport: 'ipc' });
+    await discordClient.login({ clientId: discordClientId });
+    await discordClient.setActivity({ details: 'Inside Fractual', state: 'Exploring the interface', startTimestamp: new Date(), instance: false });
+    presenceStatus = { state: 'connected', enabled: true, configured: true, message: 'Visible in Discord' };
+  } catch {
+    discordClient = null;
+    presenceStatus = { state: 'error', enabled: false, configured: true, message: 'Open Discord and try again' };
+  }
+  return presenceStatus;
 });
 
 app.whenReady().then(() => {
