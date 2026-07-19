@@ -44,7 +44,18 @@ jobs:
             git push origin $tag
           }
 
-      - name: Build and publish installer
-        run: npm run publish:win
+      - name: Build installer
+        run: npm run dist:win
+
+      - name: Publish release assets
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $tag = "v$version"
+          gh release create $tag --title "Fractual $version" --notes "Fractual $version for Windows."
+          gh release upload $tag `
+            "release/Fractual-Setup-$version.exe" `
+            "release/Fractual-Setup-$version.exe.blockmap" `
+            "release/latest.yml"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
