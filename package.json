@@ -1,6 +1,7 @@
 {
   "name": "fractual",
   "version": "2.5.0",
+  "packageManager": "npm@11.16.0",
   "description": "A polished animated Dear ImGui-inspired placeholder menu.",
   "author": "Kyro744",
   "engines": {
