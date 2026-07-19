@@ -4,6 +4,7 @@
   "description": "A polished animated Dear ImGui-inspired placeholder menu.",
   "author": "Kyro744",
   "repository": "https://github.com/PhantomBum/Fractual",
+  "homepage": "https://github.com/PhantomBum/Fractual",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
