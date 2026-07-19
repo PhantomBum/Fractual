@@ -13,5 +13,9 @@ contextBridge.exposeInMainWorld('desktop', {
       ipcRenderer.on('update:status', listener);
       return () => ipcRenderer.removeListener('update:status', listener);
     }
+  },
+  presence: {
+    getStatus: () => ipcRenderer.invoke('presence:get-status'),
+    setEnabled: enabled => ipcRenderer.invoke('presence:set-enabled', Boolean(enabled))
   }
 });
