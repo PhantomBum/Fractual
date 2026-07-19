@@ -3,6 +3,9 @@
   "version": "2.5.0",
   "description": "A polished animated Dear ImGui-inspired placeholder menu.",
   "author": "Kyro744",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "repository": "https://github.com/PhantomBum/Fractual",
   "homepage": "https://github.com/PhantomBum/Fractual",
   "main": "main.js",
