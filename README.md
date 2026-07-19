@@ -14,4 +14,6 @@ Version 2.7 rebuilds **New** around the loading screen's near-black, off-white v
 
 Version 2.7.1 moves New mode into a final, isolated stylesheet so older revision rules cannot override it. Primary labels now have a 14 px minimum, secondary copy has a 12 px minimum, navigation has a 13 px minimum, and the floors remain readable even when interface scale is reduced.
 
+Version 2.7.2 rebuilds the Material section with descriptive palette cards, larger swatches, animated selection markers, and a separate reset surface. New mode now shares a consistent rounded-corner system across panels, rows, fields, layout containers, Dock, Horizon, and UI Swap.
+
 **Settings → Discord presence** is connected to Discord RPC. Add a Discord Application ID as `discordClientId` in `package.json` for packaged builds, or set `FRACTUAL_DISCORD_CLIENT_ID` while developing. Without an ID, the setting explains what is missing instead of pretending a connection succeeded.
