@@ -16,4 +16,8 @@ Version 2.7.1 moves New mode into a final, isolated stylesheet so older revision
 
 Version 2.7.2 rebuilds the Material section with descriptive palette cards, larger swatches, animated selection markers, and a safer two-click reset surface. New mode now shares a consistent rounded-corner system across panels, rows, fields, layout containers, Dock, Horizon, and UI Swap. A searchable quick switcher (`Ctrl+K` or `Ctrl+P`) adds page, layout, theme, motion, and sidebar actions; tab/subtab state and per-page scroll positions are remembered; modal focus, click-outside closing, keyboard navigation, shortcuts, labels, and accessibility states were also tightened throughout.
 
-**Settings → Discord presence** is connected to Discord RPC. Add a Discord Application ID as `discordClientId` in `package.json` for packaged builds, or set `FRACTUAL_DISCORD_CLIENT_ID` while developing. Without an ID, the setting explains what is missing instead of pretending a connection succeeded.
+Version 2.7.3 adds spring-tweened page enter and exit motion, a denser full-window connected background that continues behind the sidebar, a compact content-sized Material panel, pointer parallax in UI Swap, and a pull-out **Made by Zero** creator signature. The loading sequence now includes an animated technical field, progress trace, live counter, typed Fractual wordmark, and a softer handoff into the interface.
+
+Version 2.8.2 restores the original focused loading sequence—only the Fractual mark and typed wordmark—while retaining the roomier interface spacing and outward-facing Zero drawer handle.
+
+**Settings → Discord presence** is connected to Discord RPC through Fractual's shared Application ID. Packaged copies use it automatically, so users never need to configure their own. `FRACTUAL_DISCORD_CLIENT_ID` can temporarily override it while developing. Never put a Discord client secret or token in the desktop app.

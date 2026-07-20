@@ -7,6 +7,7 @@ on:
     paths:
       - "package.json"
       - "package-lock.json"
+      - ".github/workflows/release.yml"
   workflow_dispatch:
 
 permissions:
@@ -52,10 +53,49 @@ jobs:
         run: |
           $version = node -p "require('./package.json').version"
           $tag = "v$version"
-          gh release create $tag --title "Fractual $version" --notes "Fractual $version for Windows."
-          gh release upload $tag `
-            "release/Fractual-Setup-$version.exe" `
-            "release/Fractual-Setup-$version.exe.blockmap" `
-            "release/latest.yml"
+
+          $releaseReady = $false
+          for ($attempt = 1; $attempt -le 8; $attempt++) {
+            gh release view $tag *> $null
+            if ($LASTEXITCODE -eq 0) {
+              $releaseReady = $true
+              break
+            }
+
+            gh release create $tag --title "Fractual $version" --notes "Fractual $version for Windows."
+            if ($LASTEXITCODE -eq 0) {
+              $releaseReady = $true
+              break
+            }
+
+            $delay = [Math]::Min(30, 5 * $attempt)
+            Write-Warning "Release API unavailable (attempt $attempt/8); retrying in $delay seconds."
+            Start-Sleep -Seconds $delay
+          }
+
+          if (-not $releaseReady) {
+            throw "Could not create or find release $tag after 8 attempts."
+          }
+
+          $assetsUploaded = $false
+          for ($attempt = 1; $attempt -le 8; $attempt++) {
+            gh release upload $tag `
+              "release/Fractual-Setup-$version.exe" `
+              "release/Fractual-Setup-$version.exe.blockmap" `
+              "release/latest.yml" `
+              --clobber
+            if ($LASTEXITCODE -eq 0) {
+              $assetsUploaded = $true
+              break
+            }
+
+            $delay = [Math]::Min(30, 5 * $attempt)
+            Write-Warning "Asset upload unavailable (attempt $attempt/8); retrying in $delay seconds."
+            Start-Sleep -Seconds $delay
+          }
+
+          if (-not $assetsUploaded) {
+            throw "Could not upload release assets after 8 attempts."
+          }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,7 +10,7 @@ const defaults = {
   theme: "noir",
   ui: "classic",
   generation: "new",
-  version: "2.7",
+  version: "2.8",
   compact: false,
   motion: true,
   discordPresence: false,
@@ -35,6 +35,7 @@ const freshDefaults = () => JSON.parse(JSON.stringify(defaults));
 let state = load(),
   toastTimer,
   scrollSaveTimer,
+  pageTransitionTimer,
   resetTimer,
   resetArmed = false,
   listening = null;
@@ -52,7 +53,7 @@ function load() {
       saved.activeSubtab = "primary";
     if (!saved.scrolls || typeof saved.scrolls !== "object") saved.scrolls = {};
     if (isPreGeneration) saved.generation = "new";
-    if (["2.5", "2.6"].includes(saved.version)) saved.version = "2.7";
+    if (["2.5", "2.6", "2.7"].includes(saved.version)) saved.version = "2.8";
     saved.scale = Math.max(90, Math.min(120, Number(saved.scale) || 100));
     return {
       ...defaults,
@@ -89,7 +90,12 @@ function motionSwap(change) {
 function tab(name, persist = true) {
   if (!titles[name]) return;
   const content = $(".content"),
-    current = $(".page.active")?.dataset.page;
+    oldPage = $(".page.active"),
+    current = oldPage?.dataset.page,
+    nextPage = $(`.page[data-page="${name}"]`),
+    pages = Object.keys(titles),
+    direction = pages.indexOf(name) >= pages.indexOf(current) ? 1 : -1,
+    shouldAnimate = Boolean(current && current !== name && state.motion);
   if (current && current !== name) state.scrolls[current] = content.scrollTop;
   const change = () => {
     $$(".nav").forEach((b) => {
@@ -97,20 +103,48 @@ function tab(name, persist = true) {
       b.classList.toggle("active", active);
       b.setAttribute("aria-current", active ? "page" : "false");
     });
-    $$(".page").forEach((p) =>
-      p.classList.toggle("active", p.dataset.page === name),
-    );
+    clearTimeout(pageTransitionTimer);
+    $$(".page").forEach((page) => {
+      page.classList.remove("active", "entering", "leaving");
+      page.removeAttribute("aria-hidden");
+    });
+    $(".page-deck").style.setProperty("--page-direction", direction);
+    if (shouldAnimate && oldPage) {
+      oldPage.classList.add("leaving");
+      oldPage.setAttribute("aria-hidden", "true");
+    }
+    nextPage.classList.add("active");
+    if (shouldAnimate) nextPage.classList.add("entering");
     $("#page-title").textContent = titles[name];
     $("#topbar-page").textContent = titles[name];
     state.activeTab = name;
     content.scrollTop = Number(state.scrolls[name] || 0);
     if (persist) save();
     icons();
+    if (shouldAnimate) {
+      $(".content-head").animate?.(
+        [
+          { opacity: 0.62, transform: `translateX(${direction * 8}px)` },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 480, easing: "cubic-bezier(.16,1,.3,1)" },
+      );
+      pageTransitionTimer = setTimeout(() => {
+        oldPage?.classList.remove("leaving");
+        oldPage?.removeAttribute("aria-hidden");
+        nextPage.classList.remove("entering");
+      }, 620);
+    }
   };
-  current === name ? change() : motionSwap(change);
+  change();
 }
 function setSubtab(name, persist = true) {
   if (!["primary", "secondary"].includes(name)) return;
+  const current = $(".subpage.active"),
+    next = $(`.subpage[data-subpage="${name}"]`),
+    shouldAnimate = Boolean(
+      persist && state.motion && current && next && current !== next,
+    );
   $$("[data-subtab]").forEach((button) => {
     const active = button.dataset.subtab === name;
     button.classList.toggle("active", active);
@@ -120,6 +154,14 @@ function setSubtab(name, persist = true) {
   $$("[data-subpage]").forEach((page) =>
     page.classList.toggle("active", page.dataset.subpage === name),
   );
+  if (shouldAnimate)
+    next.animate?.(
+      [
+        { opacity: 0, transform: "translateY(9px) scale(.994)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 470, easing: "cubic-bezier(.16,1,.3,1)" },
+    );
   state.activeSubtab = name;
   if (persist) save();
 }
@@ -447,6 +489,7 @@ function applyUI() {
 function syncVersion() {
   const select = $("#version-select");
   const version = [
+    "2.8",
     "2.7",
     "2.6",
     "2.5",
@@ -463,7 +506,7 @@ function syncVersion() {
     "1.0",
   ].includes(state.version)
     ? state.version
-    : "2.7";
+    : "2.8";
   state.version = version;
   select.value = version;
   $("#app-version").textContent = `v${version}`;
@@ -510,6 +553,7 @@ function renderStage(direction = 0) {
     ],
     { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" },
   );
+  resetStageParallax();
 }
 function moveStage(amount) {
   stageIndex = (stageIndex + amount + uiOrder.length) % uiOrder.length;
@@ -604,6 +648,44 @@ $("#coverflow").addEventListener(
   (event) => (stageTouchX = event.touches[0]?.clientX || 0),
   { passive: true },
 );
+let stageParallaxFrame = 0;
+function resetStageParallax() {
+  $$(".cover-card").forEach((card) => {
+    card.style.setProperty("--tilt-x", "0deg");
+    card.style.setProperty("--tilt-y", "0deg");
+    card.style.setProperty("--lift-x", "0px");
+    card.style.setProperty("--lift-y", "0px");
+    card.style.setProperty("--light-x", "50%");
+    card.style.setProperty("--light-y", "50%");
+  });
+}
+$("#coverflow").addEventListener("pointermove", (event) => {
+  if (!state.motion) return;
+  window.cancelAnimationFrame?.(stageParallaxFrame);
+  stageParallaxFrame = (window.requestAnimationFrame || setTimeout)(() => {
+    const flow = $("#coverflow").getBoundingClientRect(),
+      width = Math.max(flow.width, 1),
+      height = Math.max(flow.height, 1),
+      x = Math.max(
+        -1,
+        Math.min(1, ((event.clientX - flow.left) / width) * 2 - 1),
+      ),
+      y = Math.max(
+        -1,
+        Math.min(1, ((event.clientY - flow.top) / height) * 2 - 1),
+      );
+    $$(".cover-card").forEach((card) => {
+      const strength = card.classList.contains("active") ? 7 : 2.8;
+      card.style.setProperty("--tilt-x", `${-y * strength}deg`);
+      card.style.setProperty("--tilt-y", `${x * strength}deg`);
+      card.style.setProperty("--lift-x", `${x * strength * 0.42}px`);
+      card.style.setProperty("--lift-y", `${y * strength * 0.35}px`);
+      card.style.setProperty("--light-x", `${(x + 1) * 50}%`);
+      card.style.setProperty("--light-y", `${(y + 1) * 50}%`);
+    });
+  });
+});
+$("#coverflow").addEventListener("pointerleave", resetStageParallax);
 $("#coverflow").addEventListener(
   "touchend",
   (event) => {
@@ -709,6 +791,29 @@ commandOverlay.onclick = (event) => {
   if (event.target === event.currentTarget) commandOpen(false);
 };
 
+const creatorDrawer = $("#creator-drawer"),
+  creatorHandle = $("#creator-handle"),
+  creatorPanel = $("#creator-panel");
+function creatorOpen(open) {
+  creatorDrawer.classList.toggle("open", open);
+  creatorHandle.setAttribute("aria-expanded", String(open));
+  creatorPanel.setAttribute("aria-hidden", String(!open));
+  if (open) {
+    if (commandOverlay.classList.contains("open")) commandOpen(false);
+    if ($("#ui-stage").classList.contains("open")) swapOpen(false);
+  }
+}
+creatorHandle.onclick = () =>
+  creatorOpen(!creatorDrawer.classList.contains("open"));
+$("#creator-close").onclick = () => creatorOpen(false);
+document.addEventListener("pointerdown", (event) => {
+  if (
+    creatorDrawer.classList.contains("open") &&
+    !event.target.closest("#creator-drawer")
+  )
+    creatorOpen(false);
+});
+
 function trapFocus(container, event) {
   if (event.key !== "Tab") return false;
   const focusable = [
@@ -765,6 +870,12 @@ document.addEventListener(
       } else if (event.key === "Enter") chooseStage();
       else return;
       event.preventDefault();
+      return;
+    }
+    if (creatorDrawer.classList.contains("open") && event.key === "Escape") {
+      event.preventDefault();
+      creatorOpen(false);
+      creatorHandle.focus();
       return;
     }
     if (
@@ -858,13 +969,15 @@ async function setupDiscordPresence() {
 function finishBoot() {
   const boot = $("#boot-screen");
   boot.classList.add("complete");
-  setTimeout(() => boot.setAttribute("aria-hidden", "true"), 500);
+  setTimeout(() => boot.setAttribute("aria-hidden", "true"), 650);
 }
 let networkContext = null,
   networkNodes = [],
   networkLinks = [],
   networkDpr = 1,
-  networkPointer = { x: -9999, y: -9999 };
+  networkPointer = { x: -9999, y: -9999 },
+  networkTarget = { x: -9999, y: -9999 },
+  networkPointerActive = false;
 function resizeNetwork() {
   const canvas = $("#network-field");
   if (!canvas || !networkContext) return;
@@ -873,8 +986,8 @@ function resizeNetwork() {
   networkDpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(rect.width * networkDpr);
   canvas.height = Math.round(rect.height * networkDpr);
-  const columns = Math.max(5, Math.ceil(rect.width / 175)),
-    rows = Math.max(4, Math.ceil(rect.height / 145));
+  const columns = Math.max(6, Math.ceil(rect.width / 155)),
+    rows = Math.max(5, Math.ceil(rect.height / 128));
   networkNodes = [];
   networkLinks = [];
   for (let row = 0; row < rows; row++)
@@ -888,8 +1001,9 @@ function resizeNetwork() {
       });
       if (column) networkLinks.push([index, index - 1]);
       if (row) networkLinks.push([index, index - columns]);
-      if (row && column && (row + column) % 2 === 0)
-        networkLinks.push([index, index - columns - 1]);
+      if (row && column) networkLinks.push([index, index - columns - 1]);
+      if (row && column < columns - 1 && (row + column) % 2 === 0)
+        networkLinks.push([index, index - columns + 1]);
     }
 }
 function drawNetwork(now = 0) {
@@ -904,6 +1018,10 @@ function drawNetwork(now = 0) {
         .getPropertyValue("--network-rgb")
         .trim() || "145,150,146",
     strong = document.body.dataset.generation === "new";
+  if (networkPointerActive) {
+    networkPointer.x += (networkTarget.x - networkPointer.x) * 0.085;
+    networkPointer.y += (networkTarget.y - networkPointer.y) * 0.085;
+  }
   networkContext.setTransform(networkDpr, 0, 0, networkDpr, 0, 0);
   networkContext.clearRect(0, 0, width, height);
   const points = networkNodes.map((node) => {
@@ -917,15 +1035,15 @@ function drawNetwork(now = 0) {
       pull,
     };
   });
-  networkContext.lineWidth = 0.72;
+  networkContext.lineWidth = 0.68;
   networkLinks.forEach(([a, b], index) => {
     const p = points[a],
       q = points[b],
       activity = Math.max(p.pull, q.pull),
       alpha =
-        (strong ? 0.072 : 0.045) +
-        activity * 0.075 +
-        (index % 5 === 0 ? 0.018 : 0);
+        (strong ? 0.057 : 0.04) +
+        activity * 0.068 +
+        (index % 7 === 0 ? 0.015 : 0);
     networkContext.strokeStyle = `rgba(${tone},${alpha})`;
     networkContext.beginPath();
     networkContext.moveTo(p.x, p.y);
@@ -938,6 +1056,15 @@ function drawNetwork(now = 0) {
       q.y,
     );
     networkContext.stroke();
+    if (index % 9 === 0 && !reduced) {
+      const travel = (time * 1.7 + index * 0.137) % 1,
+        signalX = p.x + (q.x - p.x) * travel,
+        signalY = p.y + (q.y - p.y) * travel;
+      networkContext.fillStyle = `rgba(${tone},${0.16 + activity * 0.16})`;
+      networkContext.beginPath();
+      networkContext.arc(signalX, signalY, 1.15, 0, Math.PI * 2);
+      networkContext.fill();
+    }
   });
   points.forEach((point, index) => {
     const alpha = (strong ? 0.16 : 0.1) + point.pull * 0.22;
@@ -967,13 +1094,16 @@ function setupNetwork() {
   resizeNetwork();
   canvas.parentElement.addEventListener("pointermove", (event) => {
     const rect = canvas.getBoundingClientRect();
-    networkPointer.x = event.clientX - rect.left;
-    networkPointer.y = event.clientY - rect.top;
+    networkTarget.x = event.clientX - rect.left;
+    networkTarget.y = event.clientY - rect.top;
+    if (!networkPointerActive) networkPointer = { ...networkTarget };
+    networkPointerActive = true;
   });
-  canvas.parentElement.addEventListener(
-    "pointerleave",
-    () => (networkPointer = { x: -9999, y: -9999 }),
-  );
+  canvas.parentElement.addEventListener("pointerleave", () => {
+    networkPointerActive = false;
+    networkPointer = { x: -9999, y: -9999 };
+    networkTarget = { x: -9999, y: -9999 };
+  });
   new window.ResizeObserver(resizeNetwork).observe(canvas);
   window.requestAnimationFrame(drawNetwork);
 }
@@ -1060,4 +1190,4 @@ setupDiscordPresence();
 (window.requestAnimationFrame || setTimeout)(() =>
   document.body.classList.add("booting"),
 );
-setTimeout(finishBoot, 1250);
+setTimeout(finishBoot, 1280);
