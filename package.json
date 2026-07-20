@@ -1,10 +1,10 @@
 {
   "name": "fractual",
-  "version": "2.7.2",
+  "version": "2.8.2",
   "packageManager": "npm@11.16.0",
   "description": "A polished, animated, purpose-free desktop interface.",
   "author": "Kyro744",
-  "discordClientId": "",
+  "discordClientId": "1528564601350918284",
   "engines": {
     "node": ">=22.12.0"
   },

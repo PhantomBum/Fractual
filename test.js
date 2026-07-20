@@ -8,6 +8,8 @@ const html = fs
     "",
   );
 const app = fs.readFileSync(path.join(__dirname, "src", "app.js"), "utf8"),
+  main = fs.readFileSync(path.join(__dirname, "main.js"), "utf8"),
+  packageMetadata = require("./package.json"),
   lucide = fs.readFileSync(
     path.join(__dirname, "node_modules", "lucide", "dist", "umd", "lucide.js"),
     "utf8",
@@ -46,9 +48,32 @@ assert(
   "Loading word animation failed",
 );
 assert(d.querySelector("#boot-screen"), "Loading screen failed");
+assert(
+  !d.querySelector(".boot-field") &&
+    !d.querySelector(".boot-meta") &&
+    !d.querySelector(".boot-progress"),
+  "Focused logo-only loader failed",
+);
 assert(!d.querySelector(".fractual-rail"), "Old focus rail remains");
 assert(d.querySelector("#network-field"), "Connected network canvas failed");
+assert(
+  d.querySelector("#network-field").parentElement.classList.contains("window"),
+  "Full-window connected background failed",
+);
+assert(d.querySelector(".page-deck"), "Page transition deck failed");
+assert(
+  d.querySelector("#creator-drawer strong").textContent === "Made by Zero",
+  "Creator signature failed",
+);
 assert(d.body.dataset.generation === "new", "New interface default failed");
+assert(d.querySelector("#version-select").value === "2.8", "2.8 UI failed");
+assert(packageMetadata.version === "2.8.2", "2.8.2 version failed");
+assert(
+  packageMetadata.discordClientId === "1528564601350918284" &&
+    main.includes("discordClient.login({ clientId: discordClientId })") &&
+    main.includes("discordClient.setActivity"),
+  "Discord Rich Presence wiring failed",
+);
 assert(
   d.querySelectorAll("[data-generation-choice]").length === 2,
   "Interface mode controls failed",
@@ -143,6 +168,11 @@ opacity.value = "50";
 opacity.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
 assert(d.querySelector("#opacity-value").textContent === "50", "Slider failed");
 click('[data-tab="misc"]');
+assert(
+  d.querySelector('[data-page="visual"]').classList.contains("leaving") &&
+    d.querySelector('[data-page="misc"]').classList.contains("entering"),
+  "Page enter and exit transition failed",
+);
 click(".keybind");
 d.dispatchEvent(
   new dom.window.KeyboardEvent("keydown", { key: "K", bubbles: true }),
@@ -176,6 +206,10 @@ assert(
   d.querySelector(".cover-card.active").dataset.ui === "classic",
   "Cover-flow selection failed",
 );
+assert(
+  app.includes('style.setProperty("--tilt-x"'),
+  "Cover-flow mouse parallax failed",
+);
 click("#stage-next");
 assert(
   d.querySelector(".cover-card.active").dataset.ui === "stellar",
@@ -194,6 +228,17 @@ assert(
 assert(
   !d.querySelector("#ui-stage").classList.contains("open"),
   "UI Swap close failed",
+);
+click("#creator-handle");
+assert(
+  d.querySelector("#creator-drawer").classList.contains("open") &&
+    d.querySelector("#creator-panel").getAttribute("aria-hidden") === "false",
+  "Creator drawer open failed",
+);
+click("#creator-close");
+assert(
+  !d.querySelector("#creator-drawer").classList.contains("open"),
+  "Creator drawer close failed",
 );
 const version = d.querySelector("#version-select");
 version.value = "1.3";
@@ -270,6 +315,16 @@ assert(
 assert(/border-radius:\s*0?\.9rem/.test(newUi), "Rounded panel pass failed");
 assert(newUi.includes(".material-footer"), "Material footer failed");
 assert(newUi.includes(".command-dialog"), "Quick switcher styling failed");
+assert(newUi.includes("@keyframes fractual-page-enter"), "Page motion failed");
+assert(
+  newUi.lastIndexOf("min-height: 0") > newUi.lastIndexOf("min-height: 23.5rem"),
+  "Compact Material override failed",
+);
+assert(newUi.includes(".creator-drawer"), "Creator drawer styling failed");
+assert(
+  newUi.includes("2.8.2 — breathing room with the original focused loader"),
+  "2.8.2 spacing pass failed",
+);
 console.log(
-  "Fractual checks passed: Geist font, loading, recurring brand typing, connected network, New and Legacy modes, Discord presence, auto update UI, quick switcher, keyboard navigation, safe reset, remembered scroll and subtabs, sidebar, tabs, icons, scrollable UI Swap, version selector, toggles, sliders, scale, keybinds, themes, compact mode, and checkboxes.",
+  "Fractual 2.8.2 checks passed: Geist font, focused logo typing loader, recurring brand typing, roomy spacing, full-window connected network, animated page deck, Made by Zero drawer, New and Legacy modes, wired shared Discord presence, auto update UI, quick switcher, keyboard navigation, safe reset, remembered scroll and subtabs, sidebar, tabs, icons, parallax UI Swap, version selector, toggles, sliders, scale, keybinds, themes, compact mode, and checkboxes.",
 );
