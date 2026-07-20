@@ -42,6 +42,17 @@
             ><small>INTERFACE ONLINE</small>
           </div>
         </div>
+        <button
+          class="command-trigger"
+          id="command-trigger"
+          aria-label="Open quick switcher"
+          aria-haspopup="dialog"
+          aria-controls="command-overlay"
+          aria-expanded="false"
+          title="Quick switcher (Ctrl+K)"
+        >
+          <i data-lucide="search"></i><span>Quick switch</span><kbd>Ctrl K</kbd>
+        </button>
         <div class="window-actions">
           <button id="window-min" aria-label="Minimize"><i></i></button
           ><button id="window-max" aria-label="Maximize"><i></i></button
@@ -311,7 +322,13 @@
                       ><i class="generation-track" aria-hidden="true"></i>
                     </div>
                   </div>
-                  <button class="row swap-launch" id="ui-swap-trigger">
+                  <button
+                    class="row swap-launch"
+                    id="ui-swap-trigger"
+                    aria-haspopup="dialog"
+                    aria-controls="ui-stage"
+                    aria-expanded="false"
+                  >
                     <span
                       ><b>Layout style</b
                       ><small id="ui-swap-current">Classic frame</small></span
@@ -489,6 +506,140 @@
           <button id="stage-next" aria-label="Next interface">
             <i data-lucide="arrow-right"></i>
           </button>
+        </footer>
+      </section>
+    </div>
+    <div class="command-overlay" id="command-overlay" aria-hidden="true">
+      <section
+        class="command-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="command-title"
+      >
+        <header>
+          <i data-lucide="search"></i>
+          <input
+            id="command-search"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search pages, layouts, and actions…"
+            aria-label="Search commands"
+          />
+          <kbd>ESC</kbd>
+        </header>
+        <div class="command-heading">
+          <span id="command-title">QUICK SWITCHER</span>
+          <small id="command-count">12 actions</small>
+        </div>
+        <div class="command-results" id="command-results" role="listbox">
+          <button data-command="page-general" data-search="general home page">
+            <i data-lucide="layout-dashboard"></i
+            ><span><b>General</b><small>Open the primary interface</small></span
+            ><kbd>Ctrl 1</kbd>
+          </button>
+          <button data-command="page-visual" data-search="visual display page">
+            <i data-lucide="eye"></i
+            ><span><b>Visual</b><small>Open appearance controls</small></span
+            ><kbd>Ctrl 2</kbd>
+          </button>
+          <button data-command="page-misc" data-search="misc keys options page">
+            <i data-lucide="boxes"></i
+            ><span><b>Misc</b><small>Open options and keybinds</small></span
+            ><kbd>Ctrl 3</kbd>
+          </button>
+          <button
+            data-command="page-settings"
+            data-search="settings material themes page"
+          >
+            <i data-lucide="settings-2"></i
+            ><span><b>Settings</b><small>Open interface settings</small></span
+            ><kbd>Ctrl 4</kbd>
+          </button>
+          <button
+            data-command="ui-swap"
+            data-search="ui swap selector layout stellar"
+          >
+            <i data-lucide="panels-top-left"></i
+            ><span><b>UI Swap</b><small>Open the layout selector</small></span
+            ><kbd>Enter</kbd>
+          </button>
+          <button
+            data-command="sidebar"
+            data-search="sidebar collapse expand menu"
+          >
+            <i data-lucide="panel-left"></i
+            ><span
+              ><b>Toggle sidebar</b
+              ><small>Collapse or expand navigation</small></span
+            ><kbd>Ctrl B</kbd>
+          </button>
+          <button
+            data-command="layout-classic"
+            data-search="classic layout frame"
+          >
+            <i data-lucide="panel-left-close"></i
+            ><span
+              ><b>Classic layout</b
+              ><small>Use the full navigation frame</small></span
+            >
+          </button>
+          <button
+            data-command="layout-stellar"
+            data-search="stellar layout rail"
+          >
+            <i data-lucide="orbit"></i
+            ><span
+              ><b>Stellar layout</b
+              ><small>Use the compact icon rail</small></span
+            >
+          </button>
+          <button
+            data-command="layout-horizon"
+            data-search="horizon layout top bar"
+          >
+            <i data-lucide="panel-top"></i
+            ><span
+              ><b>Horizon layout</b
+              ><small>Move navigation to the top</small></span
+            >
+          </button>
+          <button data-command="layout-dock" data-search="dock layout bottom">
+            <i data-lucide="panel-bottom"></i
+            ><span
+              ><b>Dock layout</b
+              ><small>Use the centered bottom dock</small></span
+            >
+          </button>
+          <button
+            data-command="cycle-theme"
+            data-search="theme material palette cycle"
+          >
+            <i data-lucide="palette"></i
+            ><span
+              ><b>Cycle material</b
+              ><small>Move to the next palette</small></span
+            >
+          </button>
+          <button
+            data-command="motion"
+            data-search="animations motion reduce toggle"
+          >
+            <i data-lucide="sparkles"></i
+            ><span
+              ><b>Toggle animations</b
+              ><small>Enable or reduce interface motion</small></span
+            >
+          </button>
+          <div class="command-empty" id="command-empty">
+            <i data-lucide="search-x"></i><b>No matching actions</b
+            ><small>Try a page, layout, or setting name</small>
+          </div>
+        </div>
+        <footer>
+          <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+          <span><kbd>Enter</kbd> Run</span>
+          <span><kbd>Esc</kbd> Close</span>
         </footer>
       </section>
     </div>
